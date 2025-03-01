@@ -1,0 +1,57 @@
+name: '::: CI/CD Pipeline :::'
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: '::: Checkout :::'
+        uses: actions/checkout@v4
+      - name: '::: Use Node.js ${{ matrix.node-version }} :::'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.17.0
+          cache: 'npm'
+      - name: '::: Create .env file :::'
+        run: echo "${{ secrets.ENV }}" > .env
+      - name: '::: Install Dependencies :::'
+        run: npm install --force
+      - name: '::: Run Build :::'
+        run: npm run build
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: '::: Connect to VPS & Deploy :::'
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+
+            echo "::: Navigating to project directory :::"
+            cd fe_deploy_learning 
+
+            echo "::: Fetching latest changes from Git :::"
+            git fetch --all
+            git reset --hard origin/main
+
+            echo "::: Updating environment variables :::"
+            echo "${{ secrets.ENV }}" > .env 
+
+            echo "::: Installing dependencies :::"
+            npm install --force
+
+            echo "::: Building project :::"
+            npm run build
+
+            echo "::: Restarting PM2 service :::"
+            pm2 restart ${{ secrets.SERVICE_NAME }}
