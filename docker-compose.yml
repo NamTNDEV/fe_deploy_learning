@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  fe_deploy_learning:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+    image: namudp0301/fe_deploy_learning:v0.1.5
+    container_name: fe_deploy_learning
+    ports:
+      - '4200:3000'
+    restart: always
