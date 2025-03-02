@@ -53,3 +53,22 @@ jobs:
             sudo docker stop fe_deploy_learning || true
             sudo docker rm fe_deploy_learning || true
             sudo docker run -d -p ${{ secrets.EXTERNAL_PORT }}:${{ secrets.INTERNAL_PORT }} --name fe_deploy_learning namudp0301/fe_deploy_learning:latest
+
+            # Dọn dẹp container không sử dụng
+            echo "🧹 Cleaning up unused containers..."
+            sudo docker container prune -f
+
+            # Giới hạn số image lưu trữ - giữ lại 5 image mới nhất
+            echo "🧹 Keeping only 5 most recent images..."
+            images_to_remove=$(sudo docker images namudp0301/fe_deploy_learning --format "{{.ID}}" | tail -n +6)
+            if [ ! -z "$images_to_remove" ]; then
+                echo "$images_to_remove" | xargs sudo docker rmi -f || true
+            else
+                echo "No old images to remove"
+            fi
+
+            # Xóa dangling images (untagged)
+            echo "🧹 Removing dangling images..."
+            sudo docker image prune -f
+
+            echo "🎉 Deployment completed successfully!"
