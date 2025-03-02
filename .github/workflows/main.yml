@@ -38,8 +38,8 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
           script: |
-            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            docker pull namudp0301/fe_deploy_learning:${{ needs.build.outputs.SHA }}
-            docker stop fe_deploy_learning
-            docker rm fe_deploy_learning
-            docker run -d -p 4200:3000 --name fe_deploy_learning namudp0301/fe_deploy_learning:${{ needs.build.outputs.SHA }}
+            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            sudo docker pull namudp0301/fe_deploy_learning:${{ needs.build.outputs.SHA }}
+            sudo docker stop fe_deploy_learning
+            sudo docker rm fe_deploy_learning
+            sudo docker run -d -p 4200:3000 --name fe_deploy_learning namudp0301/fe_deploy_learning:${{ needs.build.outputs.SHA }}
