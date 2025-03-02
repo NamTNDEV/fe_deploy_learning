@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      SHA: ${{ steps.short_sha.outputs.SHA }}
     steps:
       - name: '::: 🛎️ Checkout :::'
         uses: actions/checkout@v4
