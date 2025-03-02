@@ -16,20 +16,30 @@ jobs:
         run: echo "${{ secrets.ENV }}" > .env
       - name: '::: 🔖 Generate short SHA :::'
         id: short_sha
-        run: echo "SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+        run: |
+          echo "SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "Generated SHA: $(echo ${{ github.sha }} | cut -c1-7)"
       - name: '::: 🐳 Build Docker image :::'
         run: docker build -t fe_deploy_learning .
       - name: '::: 🔑 Login to Docker Hub :::'
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
       - name: '::: 🔖 Tag Docker image :::'
-        run: docker tag fe_deploy_learning namudp0301/fe_deploy_learning:${{ steps.short_sha.outputs.SHA }}
+        run: |
+          docker tag fe_deploy_learning namudp0301/fe_deploy_learning:${{ steps.short_sha.outputs.SHA }}
+          docker tag fe_deploy_learning namudp0301/fe_deploy_learning:latest
       - name: '::: 🚀 Push Docker image :::'
-        run: docker push namudp0301/fe_deploy_learning:${{ steps.short_sha.outputs.SHA }}
+        run: |
+          docker push namudp0301/fe_deploy_learning:${{ steps.short_sha.outputs.SHA }}
+          docker push namudp0301/fe_deploy_learning:latest
+      - name: '::: 📝 Print output SHA :::'
+        run: echo "Output SHA is ${{ steps.short_sha.outputs.SHA }}"
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: '::: 📝 Print received SHA :::'
+        run: echo "Received SHA from build job is ${{ needs.build.outputs.SHA }}"
       - name: '::: Connect to VPS & Deploy :::'
         uses: appleboy/ssh-action@v1.2.1
         with:
@@ -39,7 +49,7 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            sudo docker pull namudp0301/fe_deploy_learning:${{ needs.build.outputs.SHA }}
-            sudo docker stop fe_deploy_learning
-            sudo docker rm fe_deploy_learning
-            sudo docker run -d -p 4200:3000 --name fe_deploy_learning namudp0301/fe_deploy_learning:${{ needs.build.outputs.SHA }}
+            sudo docker pull namudp0301/fe_deploy_learning:latest
+            sudo docker stop fe_deploy_learning || true
+            sudo docker rm fe_deploy_learning || true
+            sudo docker run -d -p ${{ secrets.EXTERNAL_PORT }}:${{ secrets.INTERNAL_PORT }} --name fe_deploy_learning namudp0301/fe_deploy_learning:latest
